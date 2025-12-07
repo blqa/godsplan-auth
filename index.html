@@ -18,6 +18,17 @@
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #050505; color: white; overflow-x: hidden; }
         
+        /* GLOBAL NAV */
+        #global-nav {
+            height: 40px; background: #000; display: flex; align-items: center; 
+            justify-content: space-between; padding: 0 15px; flex-shrink: 0;
+            border-bottom: 1px solid #333; position: fixed; top: 0; left: 0; width: 100%; z-index: 100;
+        }
+        .g-logo { color: #fff; font-weight: 900; text-decoration: none; font-size: 0.8rem; letter-spacing: 1px; display: flex; align-items: center; gap: 5px; }
+        .g-links { display: flex; gap: 15px; }
+        .g-link { color: #666; text-decoration: none; font-size: 0.75rem; font-weight: 700; transition: color 0.2s; }
+        .g-link:hover, .g-link.active { color: #fff; }
+
         /* FONDO ANIMADO (Igual que Nexus) */
         .bg-gradient { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: radial-gradient(circle at 50% 50%, #1a0505 0%, #000000 100%); }
         .bg-orb { position: absolute; width: 600px; height: 600px; background: radial-gradient(circle, rgba(220,38,38,0.15) 0%, rgba(0,0,0,0) 70%); border-radius: 50%; animation: float 10s infinite ease-in-out; pointer-events: none; }
@@ -44,8 +55,19 @@
         ::-webkit-scrollbar-thumb:hover { background: #ef4444; }
     </style>
 </head>
-<body class="flex items-center justify-center min-h-screen p-4">
+<body class="flex items-center justify-center min-h-screen p-4 pt-14">
     
+    <!-- NUEVA BARRA GLOBAL -->
+    <nav id="global-nav">
+        <a href="https://godsplan.site" class="g-logo"><i class="ph-bold ph-circles-three-plus"></i> NEXUS</a>
+        <div class="g-links">
+            <a href="https://adherencia.godsplan.site" class="g-link">ADHERENCIA</a>
+            <a href="https://chat.godsplan.site" class="g-link">CHAT</a>
+            <a href="#" class="g-link active">AUTH</a>
+            <a href="https://godsplan.site/proyectos" class="g-link">PROYECTOS</a>
+        </div>
+    </nav>
+
     <div class="bg-gradient">
         <div class="bg-orb" style="top: -10%; left: -10%;"></div>
         <div class="bg-orb" style="bottom: -10%; right: -10%; animation-delay: 5s;"></div>
