@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>God's Plan | Auth</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <!-- FIREBASE -->
+    <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore-compat.js"></script>
+
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #050505; color: white; overflow-x: hidden; }
+        
+        /* FONDO ANIMADO (Igual que Nexus) */
+        .bg-gradient { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: radial-gradient(circle at 50% 50%, #1a0505 0%, #000000 100%); }
+        .bg-orb { position: absolute; width: 600px; height: 600px; background: radial-gradient(circle, rgba(220,38,38,0.15) 0%, rgba(0,0,0,0) 70%); border-radius: 50%; animation: float 10s infinite ease-in-out; pointer-events: none; }
+        @keyframes float { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(30px, -30px); } }
+
+        /* CRISTAL & UI */
+        .glass-panel { background: rgba(20, 20, 20, 0.6); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
+        .input-glass { background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.1); color: white; transition: all 0.2s; }
+        .input-glass:focus { border-color: #ef4444; outline: none; background: rgba(0, 0, 0, 0.5); }
+        
+        /* ANIMACIONES */
+        .glow-text { text-shadow: 0 0 20px rgba(239, 68, 68, 0.5); }
+        .password-display { font-family: 'Courier New', monospace; letter-spacing: 1px; }
+        
+        /* TABS */
+        .tab-btn { position: relative; color: #a1a1aa; transition: color 0.2s; }
+        .tab-btn.active { color: white; }
+        .tab-btn.active::after { content: ''; position: absolute; bottom: -8px; left: 0; width: 100%; height: 2px; background: #ef4444; box-shadow: 0 0 10px #ef4444; }
+
+        /* SCROLLBAR */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #ef4444; }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+    
+    <div class="bg-gradient">
+        <div class="bg-orb" style="top: -10%; left: -10%;"></div>
+        <div class="bg-orb" style="bottom: -10%; right: -10%; animation-delay: 5s;"></div>
+    </div>
+
+    <div id="root" class="w-full max-w-md z-10"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // CONFIG
+        const firebaseConfig = { apiKey: "AIzaSyCrHBz94UtgiaYntHCYhC5jNa6auUI63vQ", authDomain: "god-s-plan-d737b.firebaseapp.com", projectId: "god-s-plan-d737b", storageBucket: "god-s-plan-d737b.firebasestorage.app", messagingSenderId: "458198314028", appId: "1:458198314028:web:d62b24cee2d19ee5b47589" };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        const App = () => {
+            const [user, setUser] = useState(null);
+            const [tab, setTab] = useState('generator'); // 'generator' | 'vault'
+            
+            // Generator State
+            const [password, setPassword] = useState('');
+            const [length, setLength] = useState(16);
+            const [isHacker, setIsHacker] = useState(false);
+            const [baseWord, setBaseWord] = useState('');
+            const [copied, setCopied] = useState(false);
+
+            // Vault State
+            const [items, setItems] = useState([]);
+            const [sName, setSName] = useState('');
+            const [sUser, setSUser] = useState('');
+
+            useEffect(() => {
+                auth.onAuthStateChanged(u => {
+                    setUser(u);
+                    if(u) loadVault(u.uid);
+                });
+                generate();
+            }, []);
+
+            useEffect(() => generate(), [length, isHacker, baseWord]);
+
+            // LOGIC
+            const generate = () => {
+                const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+                let pass = "";
+                if(baseWord) {
+                    let w = baseWord;
+                    if(isHacker) {
+                        const m = {a:'4',e:'3',i:'1',o:'0',s:'5',t:'7'};
+                        w = w.split('').map(c=>m[c.toLowerCase()]||c).join('');
+                    }
+                    pass = w;
+                }
+                while(pass.length < length) pass += chars.charAt(Math.floor(Math.random()*chars.length));
+                // Mezclar si no hay palabra base para mas seguridad, si hay base, mantener al inicio
+                if(!baseWord) pass = pass.split('').sort(()=>0.5-Math.random()).join('');
+                setPassword(pass);
+            };
+
+            const copy = (txt) => {
+                navigator.clipboard.writeText(txt);
+                setCopied(true);
+                setTimeout(()=>setCopied(false), 2000);
+            };
+
+            const login = async () => {
+                try { await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
+                catch(e) { alert(e.message); }
+            };
+
+            const loadVault = (uid) => {
+                db.collection('vault').doc(uid).collection('items').orderBy('createdAt','desc').onSnapshot(s => {
+                    setItems(s.docs.map(d => ({id:d.id, ...d.data()})));
+                });
+            };
+
+            const save = async () => {
+                if(!sName) return;
+                await db.collection('vault').doc(user.uid).collection('items').add({
+                    service: sName, user: sUser, password: password, createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                setSName(''); setSUser(''); setTab('vault');
+            };
+
+            const del = async (id) => {
+                if(confirm("¿Eliminar?")) await db.collection('vault').doc(user.uid).collection('items').doc(id).delete();
+            };
+
+            return (
+                <div className="glass-panel rounded-3xl overflow-hidden animate-fade-in">
+                    
+                    {/* HEADER */}
+                    <div className="p-6 border-b border-white/10 flex justify-between items-center bg-black/20">
+                        <div className="flex items-center gap-3">
+                            <i className="ph-fill ph-shield-check text-red-500 text-2xl"></i>
+                            <h1 className="font-black text-xl tracking-wider text-white">AUTH <span className="text-red-500">CORE</span></h1>
+                        </div>
+                        {user ? (
+                            <img src={user.photoURL} onClick={()=>auth.signOut()} className="w-8 h-8 rounded-full border border-white/20 cursor-pointer hover:border-red-500 transition" title="Cerrar Sesión"/>
+                        ) : (
+                            <button onClick={login} className="text-xs font-bold bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg transition">ENTRAR</button>
+                        )}
+                    </div>
+
+                    {/* TABS */}
+                    <div className="flex border-b border-white/5 bg-black/10">
+                        <button onClick={()=>setTab('generator')} className={`flex-1 py-4 text-sm font-bold tracking-widest text-center tab-btn ${tab==='generator'?'active':''}`}>GENERADOR</button>
+                        <button onClick={()=>setTab('vault')} className={`flex-1 py-4 text-sm font-bold tracking-widest text-center tab-btn ${tab==='vault'?'active':''}`}>BÓVEDA</button>
+                    </div>
+
+                    {/* CONTENT */}
+                    <div className="p-6 min-h-[400px]">
+                        
+                        {tab === 'generator' && (
+                            <div className="space-y-6 animate-fade-in">
+                                {/* DISPLAY */}
+                                <div className="relative group cursor-pointer" onClick={()=>copy(password)}>
+                                    <div className="absolute inset-0 bg-red-500/20 blur-xl rounded-xl group-hover:bg-red-500/30 transition"></div>
+                                    <div className="relative bg-black/60 border border-red-500/30 rounded-xl p-6 text-center hover:border-red-500/60 transition">
+                                        <div className="text-2xl md:text-3xl text-white font-bold break-all password-display glow-text">{password}</div>
+                                        <div className="text-xs text-red-400/70 mt-2 font-mono uppercase tracking-widest flex justify-center items-center gap-2">
+                                            {copied ? <><i className="ph-bold ph-check"></i> COPIADO</> : <><i className="ph-bold ph-copy"></i> CLIC PARA COPIAR</>}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* CONTROLES */}
+                                <div className="space-y-4">
+                                    <div className="flex gap-2">
+                                        <input type="text" placeholder="Palabra clave (opcional)" value={baseWord} onChange={e=>setBaseWord(e.target.value)} className="input-glass w-full rounded-lg px-4 py-3 text-sm" />
+                                        <button onClick={()=>setIsHacker(!isHacker)} className={`w-12 rounded-lg flex items-center justify-center border ${isHacker?'bg-red-500/20 border-red-500 text-red-400':'bg-black/20 border-white/10 text-gray-500'}`}>
+                                            <i className="ph-bold ph-code"></i>
+                                        </button>
+                                    </div>
+                                    
+                                    <div>
+                                        <div className="flex justify-between text-xs text-gray-400 mb-2 font-bold uppercase">Longitud: {length}</div>
+                                        <input type="range" min="8" max="32" value={length} onChange={e=>setLength(e.target.value)} className="w-full accent-red-500 h-1 bg-gray-800 rounded-lg appearance-none cursor-pointer"/>
+                                    </div>
+
+                                    <button onClick={generate} className="w-full py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-bold transition flex items-center justify-center gap-2">
+                                        <i className="ph-bold ph-arrows-clockwise"></i> REGENERAR
+                                    </button>
+                                </div>
+
+                                {/* GUARDAR */}
+                                {user ? (
+                                    <div className="pt-4 border-t border-white/5 mt-4">
+                                        <div className="flex gap-2">
+                                            <input type="text" placeholder="Nombre (ej. Netflix)" value={sName} onChange={e=>setSName(e.target.value)} className="input-glass flex-1 rounded-lg px-3 py-2 text-sm" />
+                                            <button onClick={save} className="bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-lg font-bold shadow-lg shadow-red-900/50 transition">
+                                                <i className="ph-bold ph-floppy-disk"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="text-center text-xs text-gray-500 mt-4">Inicia sesión para guardar</div>
+                                )}
+                            </div>
+                        )}
+
+                        {tab === 'vault' && (
+                            <div className="space-y-3 h-[400px] overflow-y-auto pr-2 animate-fade-in">
+                                {!user ? (
+                                    <div className="h-full flex flex-col items-center justify-center text-center text-gray-500">
+                                        <i className="ph-duotone ph-lock-key text-4xl mb-2 text-red-500/50"></i>
+                                        <p className="text-sm">Bóveda Encriptada</p>
+                                        <button onClick={login} className="mt-4 text-red-400 hover:text-white underline text-xs">Acceder ahora</button>
+                                    </div>
+                                ) : items.length === 0 ? (
+                                    <div className="text-center text-gray-600 py-10">Bóveda vacía</div>
+                                ) : (
+                                    items.map(item => (
+                                        <div key={item.id} className="bg-black/30 border border-white/5 rounded-xl p-4 hover:border-red-500/30 transition group">
+                                            <div className="flex justify-between items-start mb-2">
+                                                <div>
+                                                    <h3 className="font-bold text-white text-sm">{item.service}</h3>
+                                                    <p className="text-xs text-gray-500">{item.user}</p>
+                                                </div>
+                                                <button onClick={()=>del(item.id)} className="text-gray-600 hover:text-red-500 opacity-0 group-hover:opacity-100 transition"><i className="ph-bold ph-trash"></i></button>
+                                            </div>
+                                            <div className="bg-black/40 rounded-lg p-2 flex justify-between items-center border border-white/5">
+                                                <code className="text-red-400 text-xs font-mono truncate mr-2">{item.password}</code>
+                                                <button onClick={()=>copy(item.password)} className="text-gray-500 hover:text-white"><i className="ph-bold ph-copy"></i></button>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        )}
+
+                    </div>
+                </div>
+            );
+        };
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>
